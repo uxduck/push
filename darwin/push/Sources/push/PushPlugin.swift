@@ -1,3 +1,5 @@
+import UserNotifications
+
 #if os(iOS)
     import Flutter
     import UIKit
@@ -5,18 +7,22 @@
     public typealias DarwinApplication = UIApplication
 #elseif os(macOS)
     import FlutterMacOS
-    import UserNotifications
 
     public typealias DarwinApplication = NSApplication
 #endif
 
-public class SwiftPushPlugin: NSObject, FlutterPlugin {
+/// `@objc(PushPlugin)` pins the Objective-C runtime name, so the
+/// `GeneratedPluginRegistrant.m` that Flutter emits for iOS resolves
+/// `[PushPlugin registerWithRegistrar:]` without the module prefix. macOS
+/// emits a Swift registrant and resolves the class directly.
+@objc(PushPlugin)
+public class PushPlugin: NSObject, FlutterPlugin {
     private let flutterPluginRegistrar: FlutterPluginRegistrar
     private var pushHostHandlers: PushHostHandlers
-    public static var instance: SwiftPushPlugin? = nil
+    public static var instance: PushPlugin? = nil
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        instance = SwiftPushPlugin(with: registrar)
+        instance = PushPlugin(with: registrar)
     }
 
     init(with registrar: FlutterPluginRegistrar) {
@@ -80,3 +86,10 @@ public class SwiftPushPlugin: NSObject, FlutterPlugin {
         }
     #endif
 }
+
+/// Source compatibility for anyone referencing the pre-3.4.0 name. The
+/// Objective-C `PushPlugin` trampoline that used to forward to this class was
+/// removed, because it made the Objective-C target depend on the Swift target
+/// while the Swift target already depends on Objective-C for the pigeon types,
+/// and Swift Package Manager cannot express that cycle.
+public typealias SwiftPushPlugin = PushPlugin

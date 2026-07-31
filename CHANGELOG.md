@@ -1,3 +1,14 @@
+## 3.4.0
+
+- feat(darwin): add Swift Package Manager support. CocoaPods keeps working; both
+  build systems are supported side by side.
+- **Deployment targets raised to iOS 13.0 and macOS 10.15** (from iOS 11.0 and
+  macOS 10.14), to match the Swift Package Manager minimums. Every Flutter
+  version that still receives support already requires at least these.
+- The Objective-C `PushPlugin` trampoline was replaced by the Swift class of the
+  same name. `pluginClass: PushPlugin` is unchanged, so no app-side change is
+  needed. `SwiftPushPlugin` remains as a typealias.
+
 ## 3.3.3
 
 - fix(android): lower java version back to 1.8

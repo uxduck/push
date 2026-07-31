@@ -1,7 +1,9 @@
 import Foundation
-#if os(macOS)
-    // Needed on macOS, otherwise build won't find e.g. UNUserNotificationCenterDelegate. Optional on iOS.
-    import UserNotifications
+import UserNotifications
+
+// See the note in PushHostHandlers.swift.
+#if SWIFT_PACKAGE
+    import push_pigeon
 #endif
 
 extension PURemoteMessage {
