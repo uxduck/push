@@ -1,3 +1,11 @@
+## 3.4.0
+
+- feat(darwin): add Swift Package Manager support. CocoaPods keeps working; both build systems are supported side by side.
+- feat(ios): adopt the UIScene lifecycle. Launch handling now uses `scene:willConnectToSession:options:` when a scene is connected, while AppDelegate callbacks are kept for apps that have not migrated.
+- **Breaking**: apps using UIScene must call `PushPlugin.setUpUserNotificationCenterDelegate()` in `AppDelegate.application(_:didFinishLaunchingWithOptions:)`. Apple requires the `UNUserNotificationCenterDelegate` to be set before launch finishes, but Flutter defers plugin registration until after launch under UIScene. See the README for the new AppDelegate snippet.
+- **Breaking**: minimum versions are now Flutter 3.41, Dart 3.11, iOS 13 and macOS 10.15.
+- The Objective-C `PushPlugin` trampoline was replaced by the Swift class of the same name; `pluginClass: PushPlugin` is unchanged. `SwiftPushPlugin` remains as a deprecated typealias.
+
 ## 3.3.3
 
 - fix(android): lower java version back to 1.8

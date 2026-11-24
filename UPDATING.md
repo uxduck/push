@@ -2,6 +2,53 @@
 
 This is a reference guide to updating your application through breaking changes in the push package.
 
+## Breaking changes in v3.4
+
+### UIScene lifecycle (iOS)
+
+Apps that adopt UIScene must install the notification center delegate themselves in `AppDelegate.application(_:didFinishLaunchingWithOptions:)`, before that method returns. Flutter registers plugins after app launch under UIScene, which is too late for Apple's `UNUserNotificationCenterDelegate` requirement.
+
+```swift
+import Flutter
+import push
+import UIKit
+
+@main
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+    override func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        PushPlugin.setUpUserNotificationCenterDelegate()
+        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    // Forward the APNs token as early as possible; the plugin may not be
+    // registered yet when iOS delivers it.
+    override func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        PushPlugin.shared.application(
+            application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken
+        )
+        super.application(
+            application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken
+        )
+    }
+
+    func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+        GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    }
+}
+```
+
+Apps that have not migrated to UIScene do not need an AppDelegate change. On macOS, replace references to `SwiftPushPlugin.instance` with `PushPlugin.shared`.
+
+### Requirements
+
+SwiftPM support and the scene lifecycle APIs require Flutter 3.41, Dart 3.11, iOS 13 and macOS 10.15.
+
 ## Breaking changes in v3.0
 
 Similar to breaking changes in v2, listening to new tokens uses a callback based API. This removes the usage of streams completely from the API, opting for a simpler, callback API.
