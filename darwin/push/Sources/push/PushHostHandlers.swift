@@ -1,7 +1,17 @@
 import Foundation
-#if os(macOS)
-    // Needed on macOS, otherwise build won't find e.g. UNUserNotificationCenterDelegate. Optional on iOS.
-    import UserNotifications
+import UserNotifications
+
+#if os(iOS)
+    import Flutter
+#elseif os(macOS)
+    import FlutterMacOS
+#endif
+
+// SwiftPM builds the Pigeon Objective-C sources as a separate target, so the
+// generated types need an explicit import. CocoaPods compiles everything into
+// one module, where that module does not exist.
+#if SWIFT_PACKAGE
+    import push_pigeon
 #endif
 
 class PushHostHandlers: NSObject, PUPushHostApi {
@@ -74,21 +84,17 @@ class PushHostHandlers: NSObject, PUPushHostApi {
         }
     }
 
-    private let delegate: UNUserNotificationCenterDelegate
     private let pushFlutterApi: PUPushFlutterApi
     public static var notificationTapWhichLaunchedAppUserInfo: [AnyHashable: Any]? = nil
 
     let deviceTokenReadyDispatchGroup = DispatchGroup()
 
-    // TODO: double check that the delegate is still the same later, in case the user had set it? and log error.
-    init(
-        binaryMessenger: FlutterBinaryMessenger, originalDelegate: UNUserNotificationCenterDelegate?
-    ) {
+    init(binaryMessenger: FlutterBinaryMessenger) {
         pushFlutterApi = PUPushFlutterApi(binaryMessenger: binaryMessenger)
-        delegate = UserNotificationCenterDelegateHandlers(
-            with: originalDelegate, pushFlutterApi: pushFlutterApi
-        )
-        UNUserNotificationCenter.current().delegate = delegate
+        // The delegate may already have been installed early by the app delegate.
+        // install() is idempotent and preserves any delegate the app installed.
+        UserNotificationCenterDelegateHandlers.install()
+        UserNotificationCenterDelegateHandlers.shared.setPushFlutterApi(pushFlutterApi)
         super.init()
         enterDeviceTokenReadyDispatchGroup() // DeviceToken is not yet ready
         SetUpPUPushHostApi(binaryMessenger, self)

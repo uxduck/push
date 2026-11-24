@@ -7,7 +7,9 @@
 
 ## Updating to v3
 
-There are some breaking changes in version 3.0.0. Please see the [breaking changes](./UPDATING.md) for how to update your application.
+There are some breaking changes in version 3.0.0 and 3.4.0. Please see the [breaking changes](./UPDATING.md) for how to update your application.
+
+Version 3.4+ supports both Swift Package Manager (the Flutter 3.44+ default) and CocoaPods. It requires Flutter 3.41+, Dart 3.11+, iOS 13+ and macOS 10.15+.
 
 ## Features
 
@@ -145,6 +147,51 @@ class ExampleApplication : FlutterApplication() {
   account's [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/authkeys/list)
   page.
 
+- **UIScene lifecycle (Flutter 3.41+ apps):** Apple requires the
+  `UNUserNotificationCenterDelegate` to be set before `application:didFinishLaunchingWithOptions:`
+  returns. Flutter registers plugins later when an app adopts UIScene, so call
+  `PushPlugin.setUpUserNotificationCenterDelegate()` in your AppDelegate:
+
+```swift
+import Flutter
+import push
+import UIKit
+
+@main
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+    override func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        PushPlugin.setUpUserNotificationCenterDelegate()
+        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    // Recommended: APNs can deliver a token before plugin registration finishes.
+    // `PushPlugin.shared` keeps it until the plugin is ready.
+    override func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        PushPlugin.shared.application(
+            application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken
+        )
+        super.application(
+            application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken
+        )
+    }
+
+    func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+        GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    }
+}
+```
+
+  Apps that have not migrated to UIScene do not need any AppDelegate changes; the plugin still registers
+  the delegate and handles launch options through the AppDelegate callbacks. The plugin also forwards
+  scene connection options, so a notification tap that launched the app is still reported by
+  `Push.instance.notificationTapWhichLaunchedAppFromTerminated`.
+
 #### macOS
 
 - Pre-requisite: you need an [Apple Developer Program](https://developer.apple.com/programs/) membership -
@@ -169,15 +216,15 @@ class ExampleApplication : FlutterApplication() {
     // on macOS, we need to listen to events from the system and forward it to the push package plugin.
     // This is because the Flutter engine doesn't do this for plugins on macOS.
     override func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        SwiftPushPlugin.instance?.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+        PushPlugin.shared.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
     }
 
     override func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-        SwiftPushPlugin.instance?.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+        PushPlugin.shared.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
     }
 
     override func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String : Any]) {
-        SwiftPushPlugin.instance?.application(application, didReceiveRemoteNotification: userInfo)
+        PushPlugin.shared.application(application, didReceiveRemoteNotification: userInfo)
     }
   ...
 ```
