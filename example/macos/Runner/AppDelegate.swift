@@ -15,14 +15,14 @@ class AppDelegate: FlutterAppDelegate {
     // on macOS, we need to listen to events from the system and forward it to the push package plugin.
     // This is because the Flutter engine doesn't do this for plugins on macOS.
     override func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        SwiftPushPlugin.instance?.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+        PushPlugin.shared.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
     }
 
     override func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-        SwiftPushPlugin.instance?.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+        PushPlugin.shared.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
     }
 
     override func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
-        SwiftPushPlugin.instance?.application(application, didReceiveRemoteNotification: userInfo)
+        PushPlugin.shared.application(application, didReceiveRemoteNotification: userInfo)
     }
 }
